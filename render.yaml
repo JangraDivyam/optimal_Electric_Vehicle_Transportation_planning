@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ev-route-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MOCK_ROUTING
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
