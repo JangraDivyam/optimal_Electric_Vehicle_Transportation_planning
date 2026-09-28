@@ -19,6 +19,7 @@ from app.route_service import (
     GoogleRoutingProvider,
     MockRoutingProvider,
     OpenRouteServiceRoutingProvider,
+    ResilientRoutingProvider,
     RoutingProvider,
 )
 from app.schemas import EVRequest, RecommendationResponse
@@ -50,13 +51,15 @@ def _build_routing_provider() -> RoutingProvider:
     if settings.mock_routing:
         return MockRoutingProvider()
     if settings.routing_provider == "google":
-        return GoogleRoutingProvider(api_key=settings.google_maps_api_key)
-    if settings.routing_provider == "openrouteservice":
-        return OpenRouteServiceRoutingProvider(api_key=settings.openrouteservice_api_key)
-    raise ValueError(
-        f"Unknown ROUTING_PROVIDER '{settings.routing_provider}' "
-        "(expected 'google' or 'openrouteservice')"
-    )
+        primary = GoogleRoutingProvider(api_key=settings.google_maps_api_key)
+    elif settings.routing_provider == "openrouteservice":
+        primary = OpenRouteServiceRoutingProvider(api_key=settings.openrouteservice_api_key)
+    else:
+        raise ValueError(
+            f"Unknown ROUTING_PROVIDER '{settings.routing_provider}' "
+            "(expected 'google' or 'openrouteservice')"
+        )
+    return ResilientRoutingProvider(primary=primary, fallback=MockRoutingProvider())
 
 
 def _build_waiting_time_predictor() -> WaitingTimePredictor:

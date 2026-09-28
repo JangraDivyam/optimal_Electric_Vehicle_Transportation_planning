@@ -45,6 +45,47 @@ class RoutingProvider(ABC):
         raise NotImplementedError
 
 
+class ResilientRoutingProvider(RoutingProvider):
+    """
+    Wraps a primary routing provider (e.g. OpenRouteService or Google) and
+    automatically falls back to a secondary provider (e.g. MockRoutingProvider)
+    if the primary provider fails completely (e.g. external API quota exceeded,
+    rate limits, or network downtime).
+    """
+
+    def __init__(self, primary: RoutingProvider, fallback: RoutingProvider):
+        self.primary = primary
+        self.fallback = fallback
+
+    def get_routes(
+        self,
+        ev_location: Location,
+        destination: Location,
+        stations: list[ChargingStation],
+    ) -> list[RouteResult]:
+        try:
+            routes = self.primary.get_routes(ev_location, destination, stations)
+        except Exception as exc:
+            logger.warning(
+                "Primary routing provider %s threw exception: %s. Using fallback %s.",
+                type(self.primary).__name__,
+                exc,
+                type(self.fallback).__name__,
+            )
+            return self.fallback.get_routes(ev_location, destination, stations)
+
+        if routes and all(r.routing_failed for r in routes):
+            logger.warning(
+                "All %d candidate routes failed with %s (e.g. API quota exceeded). Falling back to %s.",
+                len(routes),
+                type(self.primary).__name__,
+                type(self.fallback).__name__,
+            )
+            return self.fallback.get_routes(ev_location, destination, stations)
+
+        return routes
+
+
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance in km. Used only as the mock provider's base
     distance estimate - never as a substitute for real road routing."""
