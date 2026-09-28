@@ -54,10 +54,22 @@ class OptimizationWeights:
         return sum(self.as_dict().values())
 
 
+DEFAULT_ORS_KEY = (
+    "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjY2YzE0MWEwOTM4NDQxOGRhNTkzYTlkNGRlN2Q2Mjc0IiwiaCI6Im11cm11cjY0In0="
+)
+
+
+def _get_ors_key() -> str:
+    raw = os.getenv("OPENROUTESERVICE_API_KEY", "")
+    if not raw or len(raw.strip()) < 40:
+        return DEFAULT_ORS_KEY
+    return raw.strip()
+
+
 @dataclass(frozen=True)
 class Settings:
     google_maps_api_key: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
-    openrouteservice_api_key: str = os.getenv("OPENROUTESERVICE_API_KEY", "")
+    openrouteservice_api_key: str = field(default_factory=_get_ors_key)
     h3_resolution: int = _get_int("H3_RESOLUTION", 9)
     candidate_station_count: int = _get_int("CANDIDATE_STATION_COUNT", 20)
     final_recommendation_count: int = _get_int("FINAL_RECOMMENDATION_COUNT", 10)
