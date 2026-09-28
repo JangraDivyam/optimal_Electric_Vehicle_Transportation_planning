@@ -243,10 +243,16 @@ class OpenRouteServiceRoutingProvider(RoutingProvider):
             response = requests.post(
                 self.MATRIX_URL, json=body, headers=headers, timeout=self.timeout_seconds
             )
+            if not response.ok:
+                logger.error(
+                    "OpenRouteService matrix HTTP %d: %s",
+                    response.status_code,
+                    response.text[:300],
+                )
             response.raise_for_status()
             return response.json()
         except (requests.RequestException, ValueError) as exc:
-            logger.warning("OpenRouteService matrix request failed: %s", exc)
+            logger.error("OpenRouteService matrix request exception: %s", exc)
             return None
 
     def get_routes(

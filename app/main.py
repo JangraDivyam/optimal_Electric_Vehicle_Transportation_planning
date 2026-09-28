@@ -81,6 +81,19 @@ def health() -> dict:
     return {"status": "ok", "stations_loaded": len(_charging_stations)}
 
 
+@app.get("/debug")
+def debug() -> dict:
+    provider = _build_routing_provider()
+    return {
+        "mock_routing": settings.mock_routing,
+        "routing_provider": settings.routing_provider,
+        "provider_name": type(provider).__name__,
+        "has_ors_key": bool(settings.openrouteservice_api_key),
+        "ors_key_length": len(settings.openrouteservice_api_key),
+        "stations_loaded": len(_charging_stations),
+    }
+
+
 @app.post("/recommend", response_model=RecommendationResponse)
 def recommend(ev_request: EVRequest) -> RecommendationResponse:
     try:
