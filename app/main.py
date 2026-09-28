@@ -65,6 +65,17 @@ def _build_waiting_time_predictor() -> WaitingTimePredictor:
     return HttpWaitingTimePredictor(ml_service_url=settings.ml_service_url)
 
 
+@app.get("/")
+@app.head("/")
+def root() -> dict:
+    return {
+        "service": "EV Route & Charging Station Recommendation API",
+        "status": "online",
+        "stations_loaded": len(_charging_stations),
+        "docs": "/docs",
+    }
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "stations_loaded": len(_charging_stations)}
